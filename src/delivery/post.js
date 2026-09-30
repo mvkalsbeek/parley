@@ -1,5 +1,6 @@
 import { ChannelType } from 'discord.js';
-import { renderNotes, chunk } from './discord-notes.js';
+import { renderNotesChunks } from './discord-notes.js';
+import { resolveSummaryLanguage } from '../adapters/summarizer/languages.js';
 
 export async function postNotes({ client, meeting, cfg, notes, talktime }) {
   const channelId = cfg.notesChannelId || meeting.channel_id;
@@ -9,8 +10,11 @@ export async function postNotes({ client, meeting, cfg, notes, talktime }) {
   // instead of pretending the post succeeded with no trace.
   if (!channel) throw new Error(`Notes channel ${channelId} is unreachable (deleted or missing access).`);
 
-  const md = renderNotes(notes, talktime, { channelName: meeting.channel_name, date: meeting.started_at });
-  const parts = chunk(md);
+  const parts = renderNotesChunks(notes, talktime, {
+    channelName: meeting.channel_name,
+    date: meeting.started_at,
+    summaryLanguage: resolveSummaryLanguage(cfg),
+  });
 
   let target = channel;
   if (cfg.useThread && channel.type === ChannelType.GuildText) {

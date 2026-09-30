@@ -26,6 +26,7 @@ Rules:
 - Use the speaker names exactly as they appear in the transcript.
 - Coverage scales with the meeting: every distinct subject discussed is its own topic. Do not collapse a long meeting into 2–3 topics. A later or shorter thread is still a topic.
 - Points name people, tools, numbers, and decisions; "discussed X" is not a point.
+- Keep each point to one concise sentence. Split separate facts into separate points instead of combining them in a long bullet.
 - Density belongs in topics, decisions, openQuestions, and actionItems — not the tldr (2–4 sentences).
 - If the transcript is short or unclear, still return the JSON with best-effort empty arrays.`;
 

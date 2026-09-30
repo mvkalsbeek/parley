@@ -12,10 +12,11 @@ import { MeetingManager } from './voice/meeting-manager.js';
 import { TrackRegistry, attachCapture } from './voice/capture.js';
 import { processMeeting } from './pipeline/orchestrator.js';
 import { getSummarizer } from './adapters/summarizer/index.js';
+import { resolveSummaryLanguage } from './adapters/summarizer/languages.js';
 import { shouldAutoJoin, shouldAutoLeave } from './voice/decisions.js';
 import { validateSetup } from './commands/setup-logic.js';
 import { handleAutocomplete } from './commands/autocomplete.js';
-import { renderNotes, chunk } from './delivery/discord-notes.js';
+import { renderNotesChunks, chunk } from './delivery/discord-notes.js';
 import { postNotes } from './delivery/post.js';
 
 export function startBot({ db, audioRoot }) {
@@ -290,7 +291,11 @@ export function startBot({ db, audioRoot }) {
         const s = id ? db.getSummary(id) : null;
         if (!s) return interaction.reply({ content: '❌ No summary found.', ephemeral: true });
         const m = db.getMeeting(id);
-        const parts = chunk(renderNotes(s.notes, s.talktime, { channelName: m.channel_name, date: m.started_at }));
+        const cfg = getGuildConfig(db, guild.id);
+        const parts = renderNotesChunks(s.notes, s.talktime, {
+          channelName: m.channel_name, date: m.started_at,
+          summaryLanguage: resolveSummaryLanguage(cfg),
+        });
         await interaction.reply({ content: parts[0], ephemeral: true });
         for (const p of parts.slice(1)) await interaction.followUp({ content: p, ephemeral: true });
         return;
@@ -301,9 +306,11 @@ export function startBot({ db, audioRoot }) {
         if (!s) return interaction.reply({ content: '❌ No summary found.', ephemeral: true });
         const m = db.getMeeting(id);
         const cfg = getGuildConfig(db, guild.id);
-        const parts = chunk(renderNotes(s.notes, s.talktime, { channelName: m.channel_name, date: m.started_at }));
+        const parts = renderNotesChunks(s.notes, s.talktime, {
+          channelName: m.channel_name, date: m.started_at,
+          summaryLanguage: resolveSummaryLanguage(cfg),
+        });
         await interaction.deferReply({ ephemeral: true });
-
         let target = interaction.channel;
         if (cfg.useThread && interaction.channel?.type === ChannelType.GuildText) {
           // Fall back to the channel itself if thread creation fails (e.g. missing perms).
