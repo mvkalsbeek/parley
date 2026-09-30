@@ -37,11 +37,11 @@ export function renderNotes(notes, talktime, meta) {
   const lines = [];
   lines.push(`# 📝 Meeting Notes — ${meta.channelName || 'meeting'} (${meta.date || ''})`);
   lines.push('');
-  lines.push('## TL;DR');
+  lines.push('## 📌 TL;DR');
   lines.push(notes.tldr || '_No summary._');
 
   if (notes.topics?.length) {
-    lines.push('', '## Topics');
+    lines.push('', '## 💬 Topics');
     for (const t of notes.topics) {
       lines.push(`**${t.title}**`);
       for (const p of t.points || []) lines.push(`- ${p}`);
@@ -49,16 +49,16 @@ export function renderNotes(notes, talktime, meta) {
   }
 
   if (notes.decisions?.length) {
-    lines.push('', '## Decisions');
+    lines.push('', '## ✅ Decisions');
     for (const d of notes.decisions) lines.push(`- ${d}`);
   }
 
   if (notes.openQuestions?.length) {
-    lines.push('', '## Open Questions');
+    lines.push('', '## ❓ Open Questions');
     for (const q of notes.openQuestions) lines.push(`- ${q}`);
   }
 
-  lines.push('', '## Action Items');
+  lines.push('', '## 🎯 Action Items');
   const grouped = groupActionItems(notes.actionItems || []);
   if (grouped.size === 0) lines.push('_None._');
   for (const [who, tasks] of grouped) {
@@ -67,7 +67,7 @@ export function renderNotes(notes, talktime, meta) {
   }
 
   if (talktime?.length) {
-    lines.push('', '## Talk Time');
+    lines.push('', '## 🎙️ Talk Time');
     for (const s of talktime) lines.push(`- ${s.displayName}: ${s.pct}% (${s.words} words)`);
   }
 

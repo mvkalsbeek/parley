@@ -51,11 +51,11 @@ test('renderNotes omits empty optional sections but keeps Action Items', () => {
     [],
     { channelName: 'g', date: 'd' }
   );
-  assert.doesNotMatch(md, /## Topics/);
-  assert.doesNotMatch(md, /## Decisions/);
-  assert.doesNotMatch(md, /## Open Questions/);
-  assert.doesNotMatch(md, /## Talk Time/);
-  assert.match(md, /## Action Items/);
+  assert.doesNotMatch(md, /## 💬 Topics/);
+  assert.doesNotMatch(md, /## ✅ Decisions/);
+  assert.doesNotMatch(md, /## ❓ Open Questions/);
+  assert.doesNotMatch(md, /## 🎙️ Talk Time/);
+  assert.match(md, /## 🎯 Action Items/);
   assert.match(md, /_None\._/);
 });
 
