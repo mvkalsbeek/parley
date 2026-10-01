@@ -13,6 +13,7 @@ export async function postNotes({ client, meeting, cfg, notes, talktime }) {
   const parts = renderNotesChunks(notes, talktime, {
     channelName: meeting.channel_name,
     date: meeting.started_at,
+    endedAt: meeting.ended_at,
     summaryLanguage: resolveSummaryLanguage(cfg),
   });
 

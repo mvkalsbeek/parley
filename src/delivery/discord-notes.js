@@ -53,6 +53,28 @@ const LABELS = {
   },
 };
 
+const STATS_LABELS = {
+  en: ['Meeting duration', 'Speakers', 'Total words'],
+  de: ['Besprechungsdauer', 'Sprecher', 'Wörter insgesamt'],
+  es: ['Duración de la reunión', 'Hablantes', 'Total de palabras'],
+  fr: ['Durée de la réunion', 'Intervenants', 'Nombre total de mots'],
+  it: ['Durata della riunione', 'Oratori', 'Parole totali'],
+  nl: ['Vergaderduur', 'Sprekers', 'Totaal woorden'],
+  pt: ['Duração da reunião', 'Oradores', 'Total de palavras'],
+  ru: ['Длительность встречи', 'Выступающие', 'Всего слов'],
+  ja: ['会議時間', '発言者数', '総語数'],
+  zh: ['会议时长', '发言人数', '总词数'],
+};
+
+// Use localized units, including hours for long meetings.
+function duration(ms, lang) {
+  const seconds = Math.floor(ms / 1000);
+  const units = [[Math.floor(seconds / 3600), 'hour'], [Math.floor(seconds / 60) % 60, 'minute'], [seconds % 60, 'second']];
+  return units.filter(([value, unit]) => value || (seconds === 0 && unit === 'second'))
+    .map(([value, unit]) => new Intl.NumberFormat(lang, { style: 'unit', unit, unitDisplay: 'short' }).format(value))
+    .join(' ');
+}
+
 function language(meta) {
   return Object.hasOwn(LABELS, meta?.summaryLanguage) ? meta.summaryLanguage : 'en';
 }
@@ -110,10 +132,22 @@ function sectionsFor(notes, talktime, meta = {}) {
   }
   sections.push({ heading: `## 🎯 ${label.actions}`, lines: actions.length ? actions : [`_${label.none}_`] });
 
-  if (talktime?.length) {
-    sections.push({ heading: `## 🎙️ ${label.talktime}`, lines: talktime.map(
-      (s) => `- ${s.displayName}: ${s.pct}% (${s.words} ${label.words})`
-    ) });
+  const elapsed = Date.parse(meta.endedAt) - Date.parse(meta.date);
+  const hasDuration = Number.isFinite(elapsed) && elapsed >= 0;
+  if (talktime?.length || hasDuration) {
+    const [meetingDuration, speakers, totalWords] = STATS_LABELS[lang];
+    const lines = [];
+    if (hasDuration) lines.push(`- **${meetingDuration}:** ${duration(elapsed, lang)}`);
+    if (talktime?.length) {
+      lines.push(`- **${speakers}:** ${talktime.length}`);
+      lines.push(`- **${totalWords}:** ${talktime.reduce((sum, s) => sum + s.words, 0)}`);
+      lines.push('');
+      lines.push(...talktime.map((s) => {
+        const time = Number.isFinite(s.ms) && s.ms >= 0 ? `${duration(s.ms, lang)} · ` : '';
+        return `- ${s.displayName}: ${s.pct}% (${time}${s.words} ${label.words})`;
+      }));
+    }
+    sections.push({ heading: `## 🎙️ ${label.talktime}`, lines });
   }
   return sections;
 }

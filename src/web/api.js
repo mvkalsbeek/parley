@@ -145,6 +145,7 @@ export function apiRouter({ db, bot = null, client = null, sidecar = null }) {
       if (attendees.length) lines.push(`**Attendees:** ${attendees.join(', ')}`, '');
       if (summary?.notes) lines.push(renderNotes(summary.notes, summary.talktime || [],
         { channelName: meeting.channel_name, date: meeting.started_at,
+          endedAt: meeting.ended_at,
           summaryLanguage: resolveSummaryLanguage(getGuildConfig(db, meeting.guild_id)) }), '');
       lines.push('## Full transcript', '');
       for (const u of utterances) {

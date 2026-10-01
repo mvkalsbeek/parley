@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderNotes, renderNotesChunks, groupActionItems, chunk } from '../src/delivery/discord-notes.js';
 import { LANGUAGES } from '../src/adapters/summarizer/languages.js';
+import { postNotes } from '../src/delivery/post.js';
 
 const notes = {
   tldr: 'We discussed the launch.',
@@ -15,6 +16,44 @@ const notes = {
   ],
 };
 const talktime = [{ displayName: 'Alice', ms: 60000, words: 120, pct: 75 }, { displayName: 'Bob', ms: 20000, words: 40, pct: 25 }];
+
+test('talk time includes recorded duration, speakers, words and individual durations', () => {
+  const meta = { date: '2026-10-01T10:00:00Z', endedAt: '2026-10-01T11:02:03Z', summaryLanguage: 'nl' };
+  const md = renderNotes(notes, talktime, meta);
+  assert.match(md, /\*\*Vergaderduur:\*\* 1 uur 2 min 3 sec/);
+  assert.match(md, /\*\*Sprekers:\*\* 2/);
+  assert.match(md, /\*\*Totaal woorden:\*\* 160/);
+  assert.match(md, /Alice: 75% \(1 min · 120 woorden\)/);
+  assert.match(md, /Bob: 25% \(20 sec · 40 woorden\)/);
+  const chunks = renderNotesChunks(notes, talktime, meta, 180);
+  assert.ok(chunks.every((part) => part.length <= 180));
+  assert.equal(chunks.filter((part) => part.includes('Vergaderduur')).length, 1);
+});
+
+test('missing or invalid meeting timestamps never produce a guessed duration', () => {
+  for (const endedAt of [undefined, 'invalid', '2026-10-01T09:59:59Z']) {
+    const md = renderNotes(notes, talktime, { date: '2026-10-01T10:00:00Z', endedAt });
+    assert.doesNotMatch(md, /Meeting duration|NaN/);
+    assert.match(md, /Total words/);
+  }
+});
+
+test('duration remains visible without speaker data and supports zero duration', () => {
+  const md = renderNotes(notes, [], { date: '2026-10-01T10:00:00Z', endedAt: '2026-10-01T10:00:00Z' });
+  assert.match(md, /Meeting duration:\*\* 0 sec/);
+  assert.doesNotMatch(md, /Speakers|Total words/);
+});
+
+test('Discord delivery passes the recorded end time to the rendered messages', async () => {
+  const sent = [];
+  await postNotes({
+    client: { channels: { fetch: async () => ({ send: async (text) => sent.push(text) }) } },
+    meeting: { channel_id: 'voice', channel_name: 'Crew', started_at: '2026-10-01T10:00:00Z', ended_at: '2026-10-01T10:45:00Z' },
+    cfg: { summaryLanguage: 'nl' }, notes, talktime,
+  });
+  assert.match(sent.join('\n'), /\*\*Vergaderduur:\*\* 45 min/);
+  assert.ok(sent.every((part) => part.length <= 1900));
+});
 
 test('groupActionItems groups by assignee with Unassigned bucket', () => {
   const g = groupActionItems(notes.actionItems);
