@@ -294,6 +294,7 @@ export function startBot({ db, audioRoot }) {
         const cfg = getGuildConfig(db, guild.id);
         const parts = renderNotesChunks(s.notes, s.talktime, {
           channelName: m.channel_name, date: m.started_at,
+          endedAt: m.ended_at,
           summaryLanguage: resolveSummaryLanguage(cfg),
         });
         await interaction.reply({ content: parts[0], ephemeral: true });
@@ -308,6 +309,7 @@ export function startBot({ db, audioRoot }) {
         const cfg = getGuildConfig(db, guild.id);
         const parts = renderNotesChunks(s.notes, s.talktime, {
           channelName: m.channel_name, date: m.started_at,
+          endedAt: m.ended_at,
           summaryLanguage: resolveSummaryLanguage(cfg),
         });
         await interaction.deferReply({ ephemeral: true });
